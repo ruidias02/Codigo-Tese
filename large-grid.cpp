@@ -444,37 +444,6 @@ int main(int argc, char* argv[]) {
         }
     );
 
-    // NETANIM Setup
-    AnimationInterface anim("hierarchical-sync.xml");
-    for (int r = 0; r < nRows; r++) {
-        for (int c = 0; c < nCols; c++) {
-            Ptr<Node> node = grid.GetNode(r, c);
-            uint32_t nodeId = node->GetId();
-            std::string prefix = "/" + std::to_string(r) + "-" + std::to_string(c);
-            if (r == 2 && c == 2) {
-                anim.UpdateNodeColor(nodeId, 255, 255, 0); 
-                anim.UpdateNodeSize(nodeId, 12.0, 12.0);
-                anim.UpdateNodeDescription(nodeId, "SYNC-CENTER");
-            } else {
-                bool isFastPublisher = (fastPublishers.find(prefix) != fastPublishers.end());
-                bool isPivot = IsPivotCoord(r, c);
-                if (isPivot) {
-                    anim.UpdateNodeColor(nodeId, 0, 0, 255); 
-                    anim.UpdateNodeSize(nodeId, 10.0, 10.0);
-                    anim.UpdateNodeDescription(nodeId, "PIVOT-" + std::to_string(r) + "-" + std::to_string(c));
-                } else if (isFastPublisher) {
-                    anim.UpdateNodeColor(nodeId, 255, 0, 0); 
-                    anim.UpdateNodeSize(nodeId, 8.0, 8.0);
-                    anim.UpdateNodeDescription(nodeId, "NODE-FAST-" + std::to_string(r) + "-" + std::to_string(c));
-                } else {
-                    anim.UpdateNodeColor(nodeId, 0, 255, 0); 
-                    anim.UpdateNodeSize(nodeId, 7.0, 7.0);
-                    anim.UpdateNodeDescription(nodeId, "NODE-SLOW-" + std::to_string(r) + "-" + std::to_string(c));
-                }
-            }
-        }
-    }
-
     Simulator::Run();
     Simulator::Destroy();
     delete rem;
