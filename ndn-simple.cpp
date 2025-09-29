@@ -76,7 +76,7 @@ struct SyncMetrics {
     void PrintFinalMetrics() {
         if (analysisStarted) return;
         analysisStarted = true;
-        std::cout << "\n=== MÉTRICAS FINAIS DA SINCRONIZAÇÃO (Reais) ===" << std::endl;
+        std::cout << "\n=== MÉTRICAS FINAIS DA SINCRONIZAÇÃO ===" << std::endl;
         std::cout << "A executar script para analisar dados no intervalo (" << syncStartTime << "s - " << syncEndTime << "s)..." << std::endl;
         
         std::string command = "python3 analyze_tracer.py " +
@@ -87,7 +87,7 @@ struct SyncMetrics {
         if (result != 0) {
             std::cerr << "Erro ao executar o script de análise. Código de retorno: " << result << std::endl;
         }
-        std::cout << "\nAnálise concluída. O tráfego de SVS deve estar registado em L3RateTracer.txt" << std::endl;
+        std::cout << "\nAnálise concluída." << std::endl;
     }
 };
 
@@ -126,7 +126,6 @@ public:
             }
         }
         std::cout << "=== CONFIGURAÇÃO DE SINCRONIZAÇÃO ÚNICA OTIMIZADA ===" << std::endl;
-        std::cout << "Ponto de sincronização: (2,2)" << std::endl;
         std::cout << pointPrefixes.size() << " nós 'Points' convergirão para o centro." << std::endl;
     }
 
@@ -225,12 +224,9 @@ public:
         
         for (auto &nd : allNodes) {
             if (nd->isPoint) {
-                // Simulação da lógica de verificação de convergência:
-                // Se a versão inicial for menor que a final de referência, assume-se que converge após a chegada.
                 if (nd->initialDataVersion < finalRefVersion) {
                     nd->syncCompleted = true; 
                 } else {
-                    // Nós que JÁ tinham a versão máxima são considerados convergidos imediatamente
                     nd->syncCompleted = true;
                 }
                 
@@ -241,7 +237,7 @@ public:
         }
 
         if (convergedCount == pointPrefixes.size()) {
-            std::cout << "\nCONVERGÊNCIA TOTAL DETETADA! " << arrivedPointsCount << "/" << pointPrefixes.size() << " Points sincronizados.\n";
+            std::cout << "\nCONVERGÊNCIA TOTAL " << arrivedPointsCount << "/" << pointPrefixes.size() << " Points sincronizados.\n";
             EndSimulationAndReport();
         } else {
             // Se não, agenda a próxima verificação
@@ -254,12 +250,10 @@ public:
         
         centralSync.metrics.EndSync();
 
-        std::cout << "\n=== FIM DO TESTE DE CONVERGÊNCIA ORGÂNICA ===\n";
+        std::cout << "\n=== FIM DO TESTE DE CONVERGÊNCIA ===\n";
 
         uint64_t finalRefVersion = centralSync.finalReferenceVersion;
         std::cout << "\n=== RESUMO FINAL DA SINCRONIZAÇÃO (Referência: v" << finalRefVersion << ") ===\n";
-        
-        std::cout << "[CONVERGÊNCIA PONTUAL] A rastrear apenas os " << pointPrefixes.size() << " nós móveis (Points):\n";
         
         for (auto &nd : allNodes) {
             if (nd->isPoint) {
@@ -377,7 +371,6 @@ int main_ndn(int argc, char* argv[]) {
 
     ndn::GlobalRoutingHelper::CalculateRoutes();
 
-    // Roteamento Multicast /ndn/svs
     for (int row = 0; row < nRows; row++) {
         for (int col = 0; col < nCols; col++) {
             Ptr<Node> participant = grid.GetNode(row, col);
@@ -397,39 +390,8 @@ int main_ndn(int argc, char* argv[]) {
     }
 
 
-    std::cout << "=== A INICIAR SIMULAÇÃO OTIMIZADA (FIM POR CONVERGÊNCIA) ===" << std::endl;
-    AnimationInterface anim("optimized-sync.xml");
-
-    // Configuração do NetAnim (cores e descrições)
-    for (int row = 0; row < nRows; row++) {
-        for (int col = 0; col < nCols; col++) {
-            Ptr<Node> node = grid.GetNode(row, col);
-            uint32_t nodeId = node->GetId();
-            std::string prefix = "/" + std::to_string(row) + "-" + std::to_string(col);
-            if (row == 2 && col == 2) {
-                anim.UpdateNodeColor(nodeId, 255, 255, 0);
-                anim.UpdateNodeSize(nodeId, 12.0, 12.0);
-                anim.UpdateNodeDescription(nodeId, "SYNC-CENTER");
-            } else {
-                bool isFastPublisher = (fastPublishers.find(prefix) != fastPublishers.end());
-                bool isPoint = IsPointCoord(row, col);
-                if (isPoint) {
-                    anim.UpdateNodeColor(nodeId, 0, 0, 255); // Azul: POINT (Móvel)
-                    anim.UpdateNodeSize(nodeId, 10.0, 10.0);
-                    anim.UpdateNodeDescription(nodeId, "POINT-" + std::to_string(row) + "-" + std::to_string(col));
-                }
-                else if (isFastPublisher) {
-                    anim.UpdateNodeColor(nodeId, 255, 0, 0); // Vermelho: Rápido (Estático)
-                    anim.UpdateNodeSize(nodeId, 8.0, 8.0);
-                    anim.UpdateNodeDescription(nodeId, "NODE-FAST-" + std::to_string(row) + "-" + std::to_string(col));
-                } else {
-                    anim.UpdateNodeColor(nodeId, 0, 255, 0); // Verde: Lento (Estático)
-                    anim.UpdateNodeSize(nodeId, 7.0, 7.0);
-                    anim.UpdateNodeDescription(nodeId, "NODE-SLOW-" + std::to_string(row) + "-" + std::to_string(col));
-                }
-            }
-        }
-    }
+    std::cout << "=== A INICIAR SIMULAÇÃO ===" << std::endl;
+    
 
 
     Simulator::Run();
